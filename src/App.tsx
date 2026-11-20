@@ -63,8 +63,11 @@ export default function App() {
     <div className="app">
       <header className="top" ref={headerRef}>
         <div className="brand">
-          <h1>ひもの輪</h1>
-          <p>輪はいくつできる？</p>
+          <img className="brand-icon" src={`${import.meta.env.BASE_URL}icon.svg`} alt="" width={44} height={44} />
+          <div className="brand-text">
+            <h1>ひもの輪</h1>
+            <p>輪はいくつできる？</p>
+          </div>
         </div>
         <nav className="tabs" role="tablist" aria-label="モード">
           {TABS.map((t) => (

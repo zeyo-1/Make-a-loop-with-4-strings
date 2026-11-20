@@ -183,6 +183,7 @@ export class RopeSim {
     const { L, badgeR: r } = this;
     const g = this.tieGap;
     const comps = analyze(ties).components;
+    const isLine = comps.map((c) => c.kind === 'chain' && c.strings.length === 1);
     type Shape = { w: number; h: number; draw: (cx: number, cy: number) => void };
     const shapes: Shape[] = comps.map((c) => {
       const k = c.strings.length;
@@ -190,7 +191,7 @@ export class RopeSim {
         const e0 = c.ends[0];
         return {
           w: L + 2 * r,
-          h: 3 * r,
+          h: 2.8 * r,
           draw: (cx, cy) => {
             const s = stringOf(e0);
             const fwd = (e0 & 1) === 0;
@@ -228,21 +229,28 @@ export class RopeSim {
       };
     });
 
-    // 棚づめ（左から右へ、入らなければ次の段）
+    // 輪・つながったひもは棚づめ（左から右へ、入らなければ次の段）。
+    // まだ結んでいない1本だけのひもは、その下に1本ずつ縦に並べる
     const gap = Math.max(14, r * 1.4);
     const maxW = this.W - 2 * this.pad;
-    const rows: { items: Shape[]; w: number; h: number }[] = [];
-    for (const sh of shapes) {
-      const row = rows[rows.length - 1];
-      if (row && row.w + gap + sh.w <= maxW) {
-        row.items.push(sh);
-        row.w += gap + sh.w;
-        row.h = Math.max(row.h, sh.h);
+    type Row = { items: Shape[]; w: number; h: number; gapAfter: number };
+    const rows: Row[] = [];
+    let lastPacked: Row | null = null;
+    shapes.forEach((sh, i) => {
+      if (isLine[i]) return;
+      if (lastPacked && lastPacked.w + gap + sh.w <= maxW) {
+        lastPacked.items.push(sh);
+        lastPacked.w += gap + sh.w;
+        lastPacked.h = Math.max(lastPacked.h, sh.h);
       } else {
-        rows.push({ items: [sh], w: sh.w, h: sh.h });
+        lastPacked = { items: [sh], w: sh.w, h: sh.h, gapAfter: gap };
+        rows.push(lastPacked);
       }
-    }
-    const totalH = rows.reduce((s, row) => s + row.h, 0) + gap * (rows.length - 1);
+    });
+    shapes.forEach((sh, i) => {
+      if (isLine[i]) rows.push({ items: [sh], w: sh.w, h: sh.h, gapAfter: r * 0.8 });
+    });
+    const totalH = rows.reduce((s, row, i) => s + row.h + (i < rows.length - 1 ? row.gapAfter : 0), 0);
     let y = Math.max(this.pad, (this.H - totalH) / 2);
     for (const row of rows) {
       let x = (this.W - row.w) / 2;
@@ -250,7 +258,7 @@ export class RopeSim {
         sh.draw(x + sh.w / 2, y + row.h / 2);
         x += sh.w + gap;
       }
-      y += row.h + gap;
+      y += row.h + row.gapAfter;
     }
     return { x: tx, y: ty };
   }

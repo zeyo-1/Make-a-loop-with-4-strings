@@ -1,15 +1,7 @@
 import { useMemo, useRef, useState } from 'react';
 import { RopeCanvas, type RopeCanvasHandle } from '../components/RopeCanvas';
 import { Answer, Frac, V } from '../components/MathText';
-import {
-  analyze,
-  chainOtherEnd,
-  emptyTies,
-  freeEnds,
-  LABELS,
-  STRING_COLORS,
-  tiesFromPairs,
-} from '../logic/strings';
+import { analyze, chainOtherEnd, freeEnds, LABELS, STRING_COLORS, tiesFromPairs } from '../logic/strings';
 
 interface Step {
   a: number;
@@ -29,8 +21,17 @@ const PATTERNS = [
   { name: '3回とも', closes: [1, 1, 1], ways: '1 × 1 × 1', count: 1, n: 4 },
 ];
 
+function EndBadge({ e, size = 'md' }: { e: number; size?: 'md' | 'lg' }) {
+  return (
+    <span className={`end-badge end-badge-${size}`} style={{ background: STRING_COLORS[e >> 1] }}>
+      {LABELS[e]}
+    </span>
+  );
+}
+
 export function StepMode({ hidden, reveal }: { hidden: boolean; reveal: boolean }) {
   const [steps, setSteps] = useState<Step[]>([]);
+  const [hover, setHover] = useState(-1);
   const canvas = useRef<RopeCanvasHandle>(null);
   const ties = useMemo(() => tiesFromPairs(steps.map((s) => [s.a, s.b])), [steps]);
   const analysis = useMemo(() => analyze(ties), [ties]);
@@ -43,8 +44,11 @@ export function StepMode({ hidden, reveal }: { hidden: boolean; reveal: boolean 
 
   const apply = (next: Step[]) => {
     setSteps(next);
-    const t = tiesFromPairs(next.map((s) => [s.a, s.b]));
-    canvas.current?.arrange(t, 600);
+    setHover(-1);
+    canvas.current?.arrange(
+      tiesFromPairs(next.map((s) => [s.a, s.b])),
+      600,
+    );
   };
 
   const choose = (b: number) => {
@@ -53,102 +57,126 @@ export function StepMode({ hidden, reveal }: { hidden: boolean; reveal: boolean 
   };
 
   const closedAt = steps.map((s) => s.closed);
-  const matchRow = (closes: number[]) => closedAt.slice(0, 3).every((c, i) => (c ? 1 : 0) === closes[i]);
+  const closedList = closedAt.map((c, i) => (c ? `${i + 1}回目` : null)).filter(Boolean).join('と');
+  const last = steps[steps.length - 1];
 
   return (
-    <section className="mode" hidden={hidden} aria-label="1手ずつ結ぶ">
+    <section className="mode mode-step" hidden={hidden} aria-label="1手ずつ結ぶ">
       <div className="mode-stage">
-        <RopeCanvas
-          ref={canvas}
-          ties={ties}
-          label={`1手ずつ結ぶ。${steps.length}手目まで。輪は${analysis.n}個`}
-          source={source}
-          candidates={candidates}
-          closingEnd={closing}
-          canTie={(a, b) => (a === source && candidates.includes(b)) || (b === source && candidates.includes(a))}
-          onTie={(a, b) => choose(a === source ? b : a)}
-        />
-        <div className="stage-n" aria-hidden>
-          <V>N</V> = {analysis.n}
-        </div>
-        <p className="stage-hint">
-          {done ? (
-            '結び終わりました。「最初から」でもう一度。'
-          ) : (
-            <>
-              <b>{LABELS[source]}</b> の相手を選びます。候補の端をタップしてください。
-              <span className="legend">
-                <span className="lg lg-cand" />
-                つながる
-                <span className="lg lg-close" />
-                輪が閉じる
-              </span>
-            </>
-          )}
-        </p>
-      </div>
+        <div className="step-card">
+          <ol className="step-progress" aria-label="進み具合">
+            {[0, 1, 2, 3].map((i) => {
+              const s = steps[i];
+              const state = s ? (s.closed ? 'closed' : 'connected') : i === steps.length ? 'current' : 'future';
+              return (
+                <li key={i} className={`sp sp-${state}`}>
+                  <span className="sp-num">{i + 1}回目</span>
+                  <span className="sp-pair">{s ? `${LABELS[s.a]}と${LABELS[s.b]}` : state === 'current' ? 'いまここ' : '　'}</span>
+                  <span className="sp-out">{s ? (s.closed ? '輪が閉じた' : 'つながった') : '　'}</span>
+                </li>
+              );
+            })}
+          </ol>
 
-      <aside className="panel">
-        <div className="step-now" aria-live="polite">
+          <p className="sr-only" aria-live="polite">
+            {last
+              ? `${LABELS[last.a]}と${LABELS[last.b]}を結びました。${last.closed ? '輪が1つ閉じました。' : '2本がつながって1本のひもになりました。'}`
+              : ''}
+          </p>
+
           {done ? (
-            <p className="step-title">
-              結び終わり：輪が閉じたのは{' '}
-              {closedAt
-                .map((c, i) => (c ? `${i + 1}回目` : null))
-                .filter(Boolean)
-                .join('と')}
+            <p className="step-q step-done">
+              結び終わり！ 輪が閉じたのは{closedList}。
               <span className="step-result">
                 <V>N</V> = {analysis.n}
               </span>
             </p>
           ) : (
             <>
-              <p className="step-title">
-                {steps.length + 1}回目：まだ輪になっていないひも <b>{remaining}本</b>（端 {remaining * 2}つ）
+              <p className="step-q">
+                <EndBadge e={source} size="lg" />
+                <span>
+                  の相手をえらぼう
+                  <small>まだ結んでいない端のうち、アルファベット順で最初の端です</small>
+                </span>
               </p>
-              <p className="step-detail">
-                <b>{LABELS[source]}</b> の相手の候補は{' '}
-                <Answer show={reveal}>{2 * remaining - 1}通り</Answer>
-                。そのうち輪が閉じるのは <Answer show={reveal}>1通り</Answer>（
-                <b style={{ color: STRING_COLORS[closing >> 1] }}>{LABELS[closing]}</b>）。
-              </p>
+              <div className="cand-grid" role="group" aria-label={`${LABELS[source]}の相手の候補`}>
+                {candidates.map((c) => (
+                  <button
+                    key={c}
+                    type="button"
+                    className={`cand ${c === closing ? 'cand-same' : 'cand-other'}`}
+                    onClick={() => choose(c)}
+                    onPointerEnter={() => setHover(c)}
+                    onPointerLeave={() => setHover(-1)}
+                    onFocus={() => setHover(c)}
+                    onBlur={() => setHover(-1)}
+                    aria-label={`${LABELS[c]}（${c === closing ? '同じひもの反対の端' : '別のひもの端'}）と結ぶ`}
+                  >
+                    <EndBadge e={c} />
+                    <span className="cand-tag">{c === closing ? '同じひも' : '別のひも'}</span>
+                  </button>
+                ))}
+              </div>
             </>
           )}
-          <div className="btn-row">
-            <button
-              type="button"
-              className="btn btn-primary"
-              disabled={done}
-              onClick={() => choose(candidates[Math.floor(Math.random() * candidates.length)])}
-            >
-              ランダムに選ぶ
-            </button>
-            <button type="button" className="btn" disabled={steps.length === 0} onClick={() => apply(steps.slice(0, -1))}>
+
+          <div className="step-tools">
+            {!done && (
+              <button
+                type="button"
+                className="btn btn-small"
+                onClick={() => choose(candidates[Math.floor(Math.random() * candidates.length)])}
+              >
+                おまかせで選ぶ
+              </button>
+            )}
+            <button type="button" className="btn btn-small" disabled={steps.length === 0} onClick={() => apply(steps.slice(0, -1))}>
               1手もどす
             </button>
             <button
               type="button"
-              className="btn"
+              className={`btn btn-small${done ? ' btn-primary' : ''}`}
               disabled={steps.length === 0}
-              onClick={() => {
-                setSteps([]);
-                canvas.current?.straighten(emptyTies());
-              }}
+              onClick={() => apply([])}
             >
-              最初から
+              {done ? 'もう一度' : '最初から'}
             </button>
           </div>
-          {steps.length > 0 && (
-            <ol className="step-log">
-              {steps.map((s, i) => (
-                <li key={i}>
-                  <span className="step-log-pair">
-                    {LABELS[s.a]}と{LABELS[s.b]}
-                  </span>
-                  <span className={s.closed ? 'tag-close' : 'tag-connect'}>{s.closed ? '輪が閉じた' : 'つながった'}</span>
-                </li>
-              ))}
-            </ol>
+        </div>
+
+        <div className="stage-wrap">
+          <RopeCanvas
+            ref={canvas}
+            ties={ties}
+            label={`1手ずつ結ぶ。${steps.length}回結んだところ。輪は${analysis.n}個`}
+            source={source}
+            candidates={candidates}
+            closingEnd={closing}
+            highlight={hover}
+            canTie={(a, b) => (a === source && candidates.includes(b)) || (b === source && candidates.includes(a))}
+            onTie={(a, b) => choose(a === source ? b : a)}
+          />
+          <div className="stage-n" aria-hidden>
+            <V>N</V> = {analysis.n}
+          </div>
+        </div>
+      </div>
+
+      <aside className="panel">
+        <div className="step-explain">
+          <h3 className="panel-h">考えよう</h3>
+          {done ? (
+            <p>
+              4回目は必ず輪が閉じます。輪の数 <V>N</V> は「輪が閉じた回数」と同じです。
+            </p>
+          ) : (
+            <p>
+              まだ輪になっていないひもは <b>{remaining}本</b>（端 {remaining * 2}つ）。 まだ結んでいない端のうちアルファベット順で最初の{' '}
+              <b style={{ color: STRING_COLORS[source >> 1] }}>{LABELS[source]}</b> の相手の候補は{' '}
+              <Answer show={reveal}>{2 * remaining - 1}通り</Answer>。そのうち輪が閉じるのは{' '}
+              <Answer show={reveal}>1通り</Answer>。
+            </p>
           )}
         </div>
 
@@ -167,7 +195,7 @@ export function StepMode({ hidden, reveal }: { hidden: boolean; reveal: boolean 
           </thead>
           <tbody>
             {PATTERNS.map((p) => {
-              const possible = matchRow(p.closes);
+              const possible = closedAt.slice(0, 3).every((c, i) => (c ? 1 : 0) === p.closes[i]);
               const exact = possible && steps.length >= 3;
               return (
                 <tr key={p.name} className={exact ? 'is-exact' : possible && steps.length > 0 ? 'is-possible' : ''}>

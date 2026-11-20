@@ -28,13 +28,9 @@ export function RandomMode({ hidden, teacher, reveal }: Props) {
   const [counts, setCounts] = usePersistentState<Counts>('random.counts', ZERO);
   const [recent, setRecent] = usePersistentState<number[]>('random.recent', []);
   const [prediction, setPrediction] = usePersistentState<number | null>('random.prediction', null);
-  const [busy, setBusy] = useState(false);
   const [lastPairs, setLastPairs] = useState<[number, number][] | null>(null);
   const [confirmClear, setConfirmClear] = useState(false);
   const canvas = useRef<RopeCanvasHandle>(null);
-  const timers = useRef<number[]>([]);
-
-  useEffect(() => () => timers.current.forEach(clearTimeout), []);
   useEffect(() => {
     if (!confirmClear) return;
     const id = window.setTimeout(() => setConfirmClear(false), 4000);
@@ -53,34 +49,8 @@ export function RandomMode({ hidden, teacher, reveal }: Props) {
     setRecent((r) => [...r, ...ns.slice(-40)].slice(-40));
   };
 
-  const runOnce = () => {
-    if (busy) return;
-    setBusy(true);
-    setLastPairs(null);
-    const pairs = randomPairs();
-    const empty = emptyTies();
-    setTies(empty);
-    canvas.current?.straighten(empty, 350);
-    const reduce = window.matchMedia?.('(prefers-reduced-motion: reduce)').matches;
-    const stepMs = reduce ? 120 : 520;
-    pairs.forEach((_, i) => {
-      timers.current.push(
-        window.setTimeout(() => {
-          const t = tiesFromPairs(pairs.slice(0, i + 1));
-          setTies(t);
-          canvas.current?.arrange(t, reduce ? 0 : 450);
-          if (i === pairs.length - 1) {
-            record([analyze(t).n]);
-            setLastPairs(pairs);
-            setBusy(false);
-          }
-        }, 420 + i * stepMs),
-      );
-    });
-  };
-
-  const runMany = (times: number) => {
-    if (busy) return;
+  // 1回でも10回でも、結果の形へ一度だけなめらかに動かす
+  const run = (times: number) => {
     const ns: number[] = [];
     let pairs: [number, number][] = [];
     for (let i = 0; i < times; i++) {
@@ -90,21 +60,18 @@ export function RandomMode({ hidden, teacher, reveal }: Props) {
     const t = tiesFromPairs(pairs);
     setTies(t);
     setLastPairs(pairs);
-    canvas.current?.arrange(t, 450);
+    canvas.current?.arrange(t, 500);
     record(ns);
   };
 
   const mean = total > 0 ? counts.reduce((s, c, i) => s + c * (i + 1), 0) / total : null;
-  const done = current.tieCount === 4;
+  const done = current.tieCount === 4 && lastPairs != null;
 
   return (
     <section className="mode" hidden={hidden} aria-label="ランダムに結ぶ">
       <div className="mode-stage">
-        <RopeCanvas ref={canvas} ties={ties} label={`ランダムに結んだ結果。輪は${current.n}個`} canTie={() => false} />
-        <div className="stage-foot" aria-live="polite">
-          {busy ? (
-            <span className="muted">結んでいます…</span>
-          ) : done ? (
+        <div className="stage-head stage-result" aria-live="polite">
+          {done ? (
             <>
               <span className="foot-n">
                 <V>N</V> = {current.n}
@@ -114,8 +81,13 @@ export function RandomMode({ hidden, teacher, reveal }: Props) {
               )}
             </>
           ) : (
-            <span className="muted">「ランダムに結ぶ」を押すと、8つの端が無作為に2つずつ結ばれます。</span>
+            <span>
+              <b>「ランダムに結ぶ」</b>を押すと、8つの端が無作為に2つずつ結ばれます。
+            </span>
           )}
+        </div>
+        <div className="stage-wrap">
+          <RopeCanvas ref={canvas} ties={ties} label={`ランダムに結んだ結果。輪は${current.n}個`} canTie={() => false} />
         </div>
       </div>
 
@@ -141,8 +113,8 @@ export function RandomMode({ hidden, teacher, reveal }: Props) {
         </div>
 
         <div className="run">
-          <button type="button" className="btn btn-primary btn-big" onClick={runOnce} disabled={busy}>
-            {busy ? '結んでいます…' : 'ランダムに結ぶ'}
+          <button type="button" className="btn btn-primary btn-big" onClick={() => run(1)}>
+            ランダムに結ぶ
           </button>
           <div className="btn-row many">
             <span className="many-label">まとめて</span>
@@ -151,8 +123,7 @@ export function RandomMode({ hidden, teacher, reveal }: Props) {
                 key={k}
                 type="button"
                 className="btn"
-                onClick={() => runMany(k)}
-                disabled={busy}
+                onClick={() => run(k)}
                 aria-label={`${k}回まとめて結ぶ`}
               >
                 {k}回

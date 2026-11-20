@@ -31,6 +31,8 @@ interface Props {
   candidates?: number[];
   /** 選ぶと輪が閉じる端 */
   closingEnd?: number;
+  /** 外のボタンにふれているときなどに強調する端 */
+  highlight?: number;
   label: string;
   className?: string;
 }
@@ -56,7 +58,18 @@ function smoothPath(pts: Pt[], closed: boolean) {
 const defaultCanTie = (ties: Ties) => (a: number, b: number) => a !== b && ties[a] === -1 && ties[b] === -1;
 
 export const RopeCanvas = forwardRef<RopeCanvasHandle, Props>(function RopeCanvas(props, ref) {
-  const { ties, onTie, onUntie, canUntie = false, source = -1, candidates, closingEnd = -1, label, className } = props;
+  const {
+    ties,
+    onTie,
+    onUntie,
+    canUntie = false,
+    source = -1,
+    candidates,
+    closingEnd = -1,
+    highlight = -1,
+    label,
+    className,
+  } = props;
   const canTie = props.canTie ?? defaultCanTie(ties);
 
   const wrapRef = useRef<HTMLDivElement>(null);
@@ -116,6 +129,11 @@ export const RopeCanvas = forwardRef<RopeCanvasHandle, Props>(function RopeCanva
         const line = knotRefs.current[k++];
         if (!line) continue;
         const a = particleOfEnd(e), b = particleOfEnd(t);
+        // 並べ直しの途中で端どうしが離れているときは、結び目の線を出さない
+        if (Math.hypot(sim.x[a] - sim.x[b], sim.y[a] - sim.y[b]) > sim.tieGap * 1.8) {
+          line.style.display = 'none';
+          continue;
+        }
         line.setAttribute('x1', sim.x[a].toFixed(1));
         line.setAttribute('y1', sim.y[a].toFixed(1));
         line.setAttribute('x2', sim.x[b].toFixed(1));
@@ -218,16 +236,19 @@ export const RopeCanvas = forwardRef<RopeCanvasHandle, Props>(function RopeCanva
 
   useImperativeHandle(
     ref,
-    () => ({
-      arrange(t, duration = 650) {
-        sim.arrange(t, duration);
-        wake();
-      },
-      straighten(t, duration = 600) {
-        sim.straighten(t, duration);
-        wake();
-      },
-    }),
+    () => {
+      const reduce = () => window.matchMedia?.('(prefers-reduced-motion: reduce)').matches;
+      return {
+        arrange(t, duration = 650) {
+          sim.arrange(t, reduce() ? 0 : duration);
+          wake();
+        },
+        straighten(t, duration = 600) {
+          sim.straighten(t, reduce() ? 0 : duration);
+          wake();
+        },
+      };
+    },
     [sim, wake],
   );
 
@@ -449,7 +470,7 @@ export const RopeCanvas = forwardRef<RopeCanvasHandle, Props>(function RopeCanva
           {Array.from({ length: END_COUNT }, (_, e) => {
             let cls = 'ring';
             if (e === activeSource) cls += ' ring-source';
-            else if (e === hoverTarget) cls += ' ring-target';
+            else if (e === hoverTarget || e === highlight) cls += ' ring-target';
             else if (candidateSet.has(e)) cls += e === closingEnd ? ' ring-closing' : ' ring-candidate';
             else if (activeSource >= 0 && !fixedSource && e !== activeSource && canTie(activeSource, e))
               cls += ' ring-hint';
