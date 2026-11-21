@@ -91,15 +91,8 @@ export function StepMode({ hidden, reveal }: { hidden: boolean; reveal: boolean 
             </>
           ) : (
             <>
-              <span className="how">
-                図の<span className="lg lg-cand" aria-hidden />点線の端をタップして結ぼう。
-                <span className="lg lg-close" aria-hidden />黄色は同じひもの反対の端です。
-              </span>
-              {last ? (
-                <span className="last">{lastResult}</span>
-              ) : (
-                <span className="last">{LABELS[source]} は、まだ結んでいない端のうちアルファベット順で最初の端です。</span>
-              )}
+              <span className="how">図の点線の端をタップして結ぼう。</span>
+              {last && <span className="last">{lastResult}</span>}
             </>
           )
         }
