@@ -1,14 +1,13 @@
 import { useMemo, useRef, useState } from 'react';
 import { RopeCanvas, type RopeCanvasHandle } from '../components/RopeCanvas';
-import { LoopSummary, PairList } from '../components/LoopSummary';
-import { V } from '../components/MathText';
+import { PairList } from '../components/PairList';
+import { WorkCard } from '../components/WorkCard';
 import { analyze, emptyTies, tie, untie, type Ties } from '../logic/strings';
 
 export function FreeMode({ hidden }: { hidden: boolean }) {
   const [ties, setTies] = useState<Ties>(emptyTies);
   const canvas = useRef<RopeCanvasHandle>(null);
   const analysis = useMemo(() => analyze(ties), [ties]);
-  const done = analysis.tieCount === 4;
 
   // 結んだり、ほどいたりするたびに、輪とひもをきれいに並べ直す
   const update = (next: Ties) => {
@@ -17,38 +16,44 @@ export function FreeMode({ hidden }: { hidden: boolean }) {
   };
 
   return (
-    <section className="mode" hidden={hidden} aria-label="自由に結ぶ">
-      <div className="mode-stage">
-        <p className="stage-head">
-          端を<b>ドラッグして別の端に重ねる</b>と結べます（端を2つ続けて<b>タップ</b>してもOK）。結んだ端をタップするとほどけます。
-        </p>
-        <div className="stage-wrap">
-          <RopeCanvas
-            ref={canvas}
-            ties={ties}
-            label={`4本のひも。輪は${analysis.n}個`}
-            canUntie
-            onTie={(a, b) => update(tie(ties, a, b))}
-            onUntie={(e) => update(untie(ties, e))}
-          />
-          <div className="stage-n" aria-hidden>
-            <V>N</V> = {analysis.n}
-          </div>
-        </div>
-      </div>
-      <aside className="panel">
-        <LoopSummary analysis={analysis} done={done} />
-        <div className="btn-row">
-          <button type="button" className="btn btn-primary" onClick={() => canvas.current?.arrange(ties)}>
-            きれいに並べる
-          </button>
-          <button type="button" className="btn" onClick={() => update(emptyTies())}>
+    <section className="mode mode-free" hidden={hidden} aria-label="自由に結ぶ">
+      <WorkCard
+        n={analysis.n}
+        chains={analysis.chains.length}
+        title="端と端を結んで、輪をつくろう"
+        sub={
+          <>
+            端を<b>ドラッグして別の端に重ねる</b>と結べます（端を2つ続けて<b>タップ</b>してもOK）。結んだ端をタップするとほどけます。
+          </>
+        }
+        tools={
+          <button
+            type="button"
+            className="btn btn-small btn-quiet"
+            disabled={analysis.tieCount === 0}
+            onClick={() => update(emptyTies())}
+          >
             すべてほどく
           </button>
-        </div>
-        <PairList ties={ties} onUntie={(e) => update(untie(ties, e))} />
+        }
+      >
+        <RopeCanvas
+          ref={canvas}
+          ties={ties}
+          label={`4本のひも。輪は${analysis.n}個`}
+          canUntie
+          onTie={(a, b) => update(tie(ties, a, b))}
+          onUntie={(e) => update(untie(ties, e))}
+        />
+      </WorkCard>
+
+      <aside className="panel" aria-label="記録">
+        <section className="panel-sec">
+          <h3 className="panel-h">結んだ組</h3>
+          <PairList ties={ties} onUntie={(e) => update(untie(ties, e))} />
+        </section>
         <p className="note">
-          ひもを指で動かして、からめてみましょう。輪どうしがからまって見えても、つながり方だけで数えます。「きれいに並べる」で元に戻せます。
+          ひもは指で動かせます。輪どうしがからまって見えても、輪の数はつながり方だけで数えます。
         </p>
       </aside>
     </section>

@@ -1,6 +1,7 @@
 import { useEffect, useMemo, useRef, useState } from 'react';
 import { RopeCanvas, type RopeCanvasHandle } from '../components/RopeCanvas';
 import { Answer, Frac, V } from '../components/MathText';
+import { WorkCard } from '../components/WorkCard';
 import {
   analyze,
   emptyTies,
@@ -67,32 +68,46 @@ export function RandomMode({ hidden, teacher, reveal }: Props) {
   const mean = total > 0 ? counts.reduce((s, c, i) => s + c * (i + 1), 0) / total : null;
   const done = current.tieCount === 4 && lastPairs != null;
 
+  const pairsText = lastPairs?.map(([a, b]) => `${LABELS[a]}と${LABELS[b]}`).join('、');
+
   return (
-    <section className="mode" hidden={hidden} aria-label="ランダムに結ぶ">
-      <div className="mode-stage">
-        <div className="stage-head stage-result" aria-live="polite">
-          {done ? (
+    <section className="mode mode-random" hidden={hidden} aria-label="ランダムに結ぶ">
+      <WorkCard
+        n={current.n}
+        chains={current.chains.length}
+        title="ランダムに結んで、輪の数を調べよう"
+        sub={
+          done ? (
             <>
-              <span className="foot-n">
-                <V>N</V> = {current.n}
-              </span>
-              {lastPairs && (
-                <span className="foot-pairs">{lastPairs.map(([a, b]) => `${LABELS[a]}と${LABELS[b]}`).join('、')}</span>
-              )}
+              今回：<b>{pairsText}</b> → <mark className="mk-close">輪が{current.n}個</mark>
             </>
           ) : (
-            <span>
-              <b>「ランダムに結ぶ」</b>を押すと、8つの端が無作為に2つずつ結ばれます。
-            </span>
-          )}
-        </div>
-        <div className="stage-wrap">
-          <RopeCanvas ref={canvas} ties={ties} label={`ランダムに結んだ結果。輪は${current.n}個`} canTie={() => false} />
-        </div>
-      </div>
+            <>
+              予想を選んでから<b>「ランダムに結ぶ」</b>を押そう。8つの端が無作為に2つずつ結ばれます。
+            </>
+          )
+        }
+        actions={
+          <>
+            <button type="button" className="btn btn-primary btn-run" onClick={() => run(1)}>
+              ランダムに結ぶ
+            </button>
+            <div className="many" role="group" aria-label="まとめて結ぶ">
+              <span className="many-label">まとめて</span>
+              {[10, 100, 1000].map((k) => (
+                <button key={k} type="button" className="btn btn-small" onClick={() => run(k)} aria-label={`${k}回まとめて結ぶ`}>
+                  {k}回
+                </button>
+              ))}
+            </div>
+          </>
+        }
+      >
+        <RopeCanvas ref={canvas} ties={ties} label={`ランダムに結んだ結果。輪は${current.n}個`} canTie={() => false} />
+      </WorkCard>
 
-      <aside className="panel">
-        <div className="predict">
+      <aside className="panel" aria-label="記録">
+        <section className="panel-sec">
           <h3 className="panel-h">
             予想：いちばん多く出る <V>N</V> は？
           </h3>
@@ -110,52 +125,34 @@ export function RandomMode({ hidden, teacher, reveal }: Props) {
               </button>
             ))}
           </div>
-        </div>
+        </section>
 
-        <div className="run">
-          <button type="button" className="btn btn-primary btn-big" onClick={() => run(1)}>
-            ランダムに結ぶ
-          </button>
-          <div className="btn-row many">
-            <span className="many-label">まとめて</span>
-            {[10, 100, 1000].map((k) => (
-              <button
-                key={k}
-                type="button"
-                className="btn"
-                onClick={() => run(k)}
-                aria-label={`${k}回まとめて結ぶ`}
-              >
-                {k}回
-              </button>
-            ))}
-          </div>
-        </div>
-
-        <ResultTable counts={counts} prediction={prediction} reveal={reveal} />
-
-        <p className="mean">
-          <span>
-            {total}回の平均 <V>N</V> = {mean == null ? '—' : mean.toFixed(3)}
-          </span>
-          {reveal && (
-            <span className="answer">
-              期待値 <Frac n={EXPECTED_N[0]} d={EXPECTED_N[1]} /> ≈ {(EXPECTED_N[0] / EXPECTED_N[1]).toFixed(3)}
+        <section className="panel-sec">
+          <h3 className="panel-h">実演の結果（{total}回）</h3>
+          <ResultTable counts={counts} prediction={prediction} reveal={reveal} />
+          <p className="mean">
+            <span>
+              平均 <V>N</V> = {mean == null ? '—' : mean.toFixed(3)}
             </span>
-          )}
-        </p>
+            {reveal && (
+              <span className="answer">
+                期待値 <Frac n={EXPECTED_N[0]} d={EXPECTED_N[1]} /> ≈ {(EXPECTED_N[0] / EXPECTED_N[1]).toFixed(3)}
+              </span>
+            )}
+          </p>
+        </section>
 
         {recent.length > 0 && (
-          <div className="recent">
+          <section className="panel-sec">
             <h3 className="panel-h">最近の結果（新しいものが右）</h3>
             <p className="recent-list">
               {recent.slice(-24).map((n, i) => (
-                <span key={i} className={`recent-n n${n}`}>
+                <span key={i} className="recent-n">
                   {n}
                 </span>
               ))}
             </p>
-          </div>
+          </section>
         )}
 
         {teacher && <ClassInput onAdd={(add) => setCounts((c) => c.map((v, i) => v + add[i]) as Counts)} />}
@@ -183,7 +180,6 @@ function ResultTable({ counts, prediction, reveal }: { counts: Counts; predictio
   const maxRel = Math.max(0.5, ...counts.map((c) => (total ? c / total : 0)));
   return (
     <table className="result">
-      <caption>実演の結果（{total}回）</caption>
       <thead>
         <tr>
           <th scope="col">
