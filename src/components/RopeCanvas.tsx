@@ -234,21 +234,19 @@ export const RopeCanvas = forwardRef<RopeCanvasHandle, Props>(function RopeCanva
     wake();
   }, [ties, sim, wake]);
 
+  // 端末の「視差効果を減らす」がオンでも、ひもが動いて結ばれる様子は見せる（授業で大事な動きなので）
   useImperativeHandle(
     ref,
-    () => {
-      const reduce = () => window.matchMedia?.('(prefers-reduced-motion: reduce)').matches;
-      return {
-        arrange(t, duration = 650) {
-          sim.arrange(t, reduce() ? 0 : duration);
-          wake();
-        },
-        straighten(t, duration = 600) {
-          sim.straighten(t, reduce() ? 0 : duration);
-          wake();
-        },
-      };
-    },
+    () => ({
+      arrange(t, duration = 650) {
+        sim.arrange(t, duration);
+        wake();
+      },
+      straighten(t, duration = 600) {
+        sim.straighten(t, duration);
+        wake();
+      },
+    }),
     [sim, wake],
   );
 

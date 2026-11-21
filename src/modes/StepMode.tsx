@@ -90,10 +90,7 @@ export function StepMode({ hidden, reveal }: { hidden: boolean; reveal: boolean 
               輪が閉じたのは <b>{closedList}</b>。輪の数 <V>N</V> は「輪が閉じた回数」と同じです。
             </>
           ) : (
-            <>
-              <span className="how">図の点線の端をタップして結ぼう。</span>
-              {last && <span className="last">{lastResult}</span>}
-            </>
+            last && <span className="last">{lastResult}</span>
           )
         }
         tools={
