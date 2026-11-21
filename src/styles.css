@@ -289,6 +289,13 @@ main {
   line-height: 1.35;
 }
 
+.work-kicker {
+  margin: 0 0 0.1rem;
+  font-size: 0.85rem;
+  font-weight: 700;
+  color: var(--ink-2);
+}
+
 .work-step {
   display: inline-block;
   font-size: 0.8rem;
@@ -379,6 +386,69 @@ mark {
   align-items: center;
   gap: 0.5rem 0.8rem;
   min-width: 0;
+}
+
+.work-primary-full {
+  flex: 1 1 100%;
+}
+
+/* ランダム：① 予想 → ② 結ぶ */
+.flow {
+  display: flex;
+  flex-direction: column;
+  gap: 0.55rem;
+  width: 100%;
+}
+
+.flow-row {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 0.45rem 0.7rem;
+}
+
+.flow-step {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.4rem;
+  width: 4.6rem;
+  flex: none;
+  font-weight: 900;
+  font-size: 0.95rem;
+}
+
+.flow-num {
+  display: inline-grid;
+  place-items: center;
+  width: 1.6rem;
+  height: 1.6rem;
+  border-radius: 50%;
+  border: 2px solid var(--ink-2);
+  color: var(--ink-2);
+  font-size: 0.85rem;
+  line-height: 1;
+}
+
+.flow-row.is-next .flow-num {
+  background: var(--ink);
+  border-color: var(--ink);
+  color: #fff;
+}
+
+.flow-q {
+  font-size: 0.9rem;
+  color: var(--ink-2);
+  white-space: nowrap;
+}
+
+.seg-inline {
+  width: min(100%, 15rem);
+  gap: 0.3rem;
+}
+
+.seg-inline button {
+  min-height: 2.5rem;
+  font-size: 1.2rem;
 }
 
 .work-tools {
@@ -922,52 +992,31 @@ mark {
 }
 
 /* ---------- 1手ずつ結ぶ ---------- */
-.cand-row {
-  display: flex;
-  flex-wrap: wrap;
-  gap: 0.4rem;
+.work-sub .how,
+.work-sub .last {
+  display: block;
 }
 
-.cand {
-  display: flex;
-  flex-direction: column;
-  align-items: center;
-  gap: 0.2rem;
-  width: 4.3rem;
-  padding: 0.4rem 0.1rem 0.3rem;
-  border-radius: 12px;
-  background: #fff;
+.work-sub .last {
+  margin-top: 0.15rem;
 }
 
-.cand-other {
+.lg {
+  display: inline-block;
+  vertical-align: -0.15em;
+  width: 1em;
+  height: 1em;
+  border-radius: 50%;
+  margin: 0 0.25em 0 0.15em;
+}
+
+.lg-cand {
   border: 2px dashed var(--ink-2);
 }
 
-.cand-same {
-  border: 2.5px solid var(--marker-line);
-  background: var(--marker-soft);
-}
-
-.cand-tag {
-  font-size: 0.72rem;
-  font-weight: 700;
-  color: var(--ink-2);
-  white-space: nowrap;
-}
-
-.cand-same .cand-tag {
-  color: #8a6a00;
-}
-
-@media (hover: hover) {
-  .cand:hover {
-    border-style: solid;
-    border-color: var(--ink);
-  }
-}
-
-.cand:active {
-  transform: translateY(1px);
+.lg-close {
+  border: 2px solid var(--marker-line);
+  background: rgb(255 216 74 / 0.7);
 }
 
 /* 樹形図（ワークシート3ページ目） */
@@ -1195,29 +1244,18 @@ mark {
     font-size: 0.8rem;
     min-height: 2.3rem;
   }
-  /* 候補は最大7つを1行に */
-  .cand-row {
-    display: grid;
-    grid-template-columns: repeat(7, minmax(0, 1fr));
-    gap: 0.25rem;
-    width: 100%;
-  }
-  .cand {
-    width: auto;
-    padding: 0.3rem 0 0.2rem;
-    gap: 0.1rem;
-    border-radius: 10px;
-  }
-  .cand .end-badge {
-    width: 1.6rem;
-    height: 1.6rem;
-    font-size: 0.9rem;
-  }
-  .cand-tag {
-    font-size: 0.6rem;
-  }
   .btn-run {
-    flex: 1 1 100%;
+    flex: 1 1 auto;
+  }
+  .flow-step {
+    width: 4.1rem;
+  }
+  .flow-q {
+    display: none;
+  }
+  .seg-inline {
+    flex: 1;
+    width: auto;
   }
   .many {
     width: 100%;

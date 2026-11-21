@@ -34,7 +34,6 @@ const pairText = (s: Step) => `${LABELS[s.a]}と${LABELS[s.b]}`;
 
 export function StepMode({ hidden, reveal }: { hidden: boolean; reveal: boolean }) {
   const [steps, setSteps] = useState<Step[]>([]);
-  const [hover, setHover] = useState(-1);
   const canvas = useRef<RopeCanvasHandle>(null);
   const ties = useMemo(() => tiesFromPairs(steps.map((s) => [s.a, s.b])), [steps]);
   const analysis = useMemo(() => analyze(ties), [ties]);
@@ -46,7 +45,6 @@ export function StepMode({ hidden, reveal }: { hidden: boolean; reveal: boolean 
 
   const apply = (next: Step[]) => {
     setSteps(next);
-    setHover(-1);
     canvas.current?.arrange(
       tiesFromPairs(next.map((s) => [s.a, s.b])),
       600,
@@ -74,6 +72,7 @@ export function StepMode({ hidden, reveal }: { hidden: boolean; reveal: boolean 
       <WorkCard
         n={analysis.n}
         chains={analysis.chains.length}
+        kicker="1手ずつ順に相手を選ぼう"
         step={done ? undefined : `${steps.length + 1}回目`}
         title={
           done ? (
@@ -90,32 +89,18 @@ export function StepMode({ hidden, reveal }: { hidden: boolean; reveal: boolean 
             <>
               輪が閉じたのは <b>{closedList}</b>。輪の数 <V>N</V> は「輪が閉じた回数」と同じです。
             </>
-          ) : last ? (
-            lastResult
           ) : (
-            'まだ結んでいない端のうち、アルファベット順で最初の端の相手を決めます。'
-          )
-        }
-        actions={
-          done ? undefined : (
-            <div className="cand-row" role="group" aria-label={`${LABELS[source]}の相手の候補`}>
-              {candidates.map((c) => (
-                <button
-                  key={c}
-                  type="button"
-                  className={`cand ${c === closing ? 'cand-same' : 'cand-other'}`}
-                  onClick={() => choose(c)}
-                  onPointerEnter={(e) => e.pointerType === 'mouse' && setHover(c)}
-                  onPointerLeave={() => setHover(-1)}
-                  onFocus={() => setHover(c)}
-                  onBlur={() => setHover(-1)}
-                  aria-label={`${LABELS[c]}（${c === closing ? '同じひもの反対の端' : '別のひもの端'}）と結ぶ`}
-                >
-                  <EndBadge e={c} />
-                  <span className="cand-tag">{c === closing ? '同じひも' : '別のひも'}</span>
-                </button>
-              ))}
-            </div>
+            <>
+              <span className="how">
+                図の<span className="lg lg-cand" aria-hidden />点線の端をタップして結ぼう。
+                <span className="lg lg-close" aria-hidden />黄色は同じひもの反対の端です。
+              </span>
+              {last ? (
+                <span className="last">{lastResult}</span>
+              ) : (
+                <span className="last">{LABELS[source]} は、まだ結んでいない端のうちアルファベット順で最初の端です。</span>
+              )}
+            </>
           )
         }
         tools={
@@ -155,7 +140,6 @@ export function StepMode({ hidden, reveal }: { hidden: boolean; reveal: boolean 
           source={source}
           candidates={candidates}
           closingEnd={closing}
-          highlight={hover}
           canTie={(a, b) => (a === source && candidates.includes(b)) || (b === source && candidates.includes(a))}
           onTie={(a, b) => choose(a === source ? b : a)}
         />

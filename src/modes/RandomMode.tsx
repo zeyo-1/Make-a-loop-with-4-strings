@@ -81,52 +81,64 @@ export function RandomMode({ hidden, teacher, reveal }: Props) {
             <>
               今回：<b>{pairsText}</b> → <mark className="mk-close">輪が{current.n}個</mark>
             </>
+          ) : prediction == null ? (
+            <>
+              まず <b>①</b> で、いちばん多く出る輪の数 <V>N</V> を予想しよう。
+            </>
           ) : (
             <>
-              予想を選んでから<b>「ランダムに結ぶ」</b>を押そう。8つの端が無作為に2つずつ結ばれます。
+              <b>②</b> の<b>「ランダムに結ぶ」</b>を押そう。8つの端が無作為に2つずつ結ばれます。
             </>
           )
         }
+        actionsFull
         actions={
-          <>
-            <button type="button" className="btn btn-primary btn-run" onClick={() => run(1)}>
-              ランダムに結ぶ
-            </button>
-            <div className="many" role="group" aria-label="まとめて結ぶ">
-              <span className="many-label">まとめて</span>
-              {[10, 100, 1000].map((k) => (
-                <button key={k} type="button" className="btn btn-small" onClick={() => run(k)} aria-label={`${k}回まとめて結ぶ`}>
-                  {k}回
-                </button>
-              ))}
+          <div className="flow">
+            <div className={`flow-row${prediction == null ? ' is-next' : ''}`}>
+              <span className="flow-step">
+                <span className="flow-num">1</span>予想
+              </span>
+              <span className="flow-q">
+                いちばん多く出る <V>N</V> は？
+              </span>
+              <div className="seg seg-inline" role="radiogroup" aria-label="予想：いちばん多く出る N">
+                {[1, 2, 3, 4].map((n) => (
+                  <button
+                    key={n}
+                    type="button"
+                    role="radio"
+                    aria-checked={prediction === n}
+                    className={prediction === n ? 'is-on' : ''}
+                    onClick={() => setPrediction(prediction === n ? null : n)}
+                  >
+                    {n}
+                  </button>
+                ))}
+              </div>
             </div>
-          </>
+            <div className={`flow-row${prediction != null ? ' is-next' : ''}`}>
+              <span className="flow-step">
+                <span className="flow-num">2</span>結ぶ
+              </span>
+              <button type="button" className="btn btn-primary btn-run" onClick={() => run(1)}>
+                ランダムに結ぶ
+              </button>
+              <div className="many" role="group" aria-label="まとめて結ぶ">
+                <span className="many-label">まとめて</span>
+                {[10, 100, 1000].map((k) => (
+                  <button key={k} type="button" className="btn btn-small" onClick={() => run(k)} aria-label={`${k}回まとめて結ぶ`}>
+                    {k}回
+                  </button>
+                ))}
+              </div>
+            </div>
+          </div>
         }
       >
         <RopeCanvas ref={canvas} ties={ties} label={`ランダムに結んだ結果。輪は${current.n}個`} canTie={() => false} />
       </WorkCard>
 
       <aside className="panel" aria-label="記録">
-        <section className="panel-sec">
-          <h3 className="panel-h">
-            予想：いちばん多く出る <V>N</V> は？
-          </h3>
-          <div className="seg" role="radiogroup" aria-label="予想">
-            {[1, 2, 3, 4].map((n) => (
-              <button
-                key={n}
-                type="button"
-                role="radio"
-                aria-checked={prediction === n}
-                className={prediction === n ? 'is-on' : ''}
-                onClick={() => setPrediction(prediction === n ? null : n)}
-              >
-                {n}
-              </button>
-            ))}
-          </div>
-        </section>
-
         <section className="panel-sec">
           <h3 className="panel-h">実演の結果（{total}回）</h3>
           <ResultTable counts={counts} prediction={prediction} reveal={reveal} />
