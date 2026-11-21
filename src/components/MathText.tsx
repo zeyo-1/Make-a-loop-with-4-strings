@@ -15,11 +15,9 @@ export function V({ children }: { children: ReactNode }) {
   return <var className="mv">{children}</var>;
 }
 
-/** 答え（朱書き）：表示していないときは空欄の枠にする */
-export function Answer({ show, children, wide }: { show: boolean; children: ReactNode; wide?: boolean }) {
-  return show ? (
-    <span className="answer">{children}</span>
-  ) : (
-    <span className={`blank${wide ? ' blank-wide' : ''}`} aria-label="答えは先生が表示します" />
-  );
+/**
+ * 答え（朱書き）。先生が「答えを表示」を押すまでは、空欄の代わりに問いかけ（ask）を出す
+ */
+export function Answer({ show, children, ask = '？' }: { show: boolean; children: ReactNode; ask?: ReactNode }) {
+  return show ? <span className="answer">{children}</span> : <span className="ask">{ask}</span>;
 }

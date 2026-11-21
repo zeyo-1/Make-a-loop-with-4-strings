@@ -146,6 +146,7 @@ export function StepMode({ hidden, reveal }: { hidden: boolean; reveal: boolean 
 
         <section className="panel-sec">
           <h3 className="panel-h">1〜3回目で輪が閉じた回（問4）</h3>
+          {!reveal && <p className="ask-line">それぞれ何通りある？ そのときの輪の数 <V>N</V> は？</p>}
           <table className="patterns">
             <thead>
               <tr>
@@ -164,7 +165,7 @@ export function StepMode({ hidden, reveal }: { hidden: boolean; reveal: boolean 
                   <tr key={p.name} className={exact ? 'is-exact' : possible && steps.length > 0 ? 'is-possible' : ''}>
                     <th scope="row">{p.name}</th>
                     <td>
-                      <Answer show={reveal} wide>
+                      <Answer show={reveal}>
                         {p.ways} = {p.count}
                       </Answer>
                     </td>
@@ -212,8 +213,8 @@ function Tree({ steps, reveal }: { steps: Step[]; reveal: boolean }) {
                 {k > 1 && (
                   <>
                     <span className="tree-label">
-                      つながる{' '}
-                      <Answer show={reveal}>
+                      つながる
+                      <Answer show={reveal} ask="確率は？">
                         <Frac n={2 * k - 2} d={2 * k - 1} />
                       </Answer>
                     </span>
@@ -224,8 +225,10 @@ function Tree({ steps, reveal }: { steps: Step[]; reveal: boolean }) {
               <div className={`tree-arrow${taken ? (taken.closed ? ' is-close' : ' is-connect') : ''}`} aria-hidden />
               <div className={`tree-side tree-right${taken?.closed ? ' is-taken' : ''}`}>
                 <span className="tree-label">
-                  {k > 1 ? '輪が閉じる' : '必ず輪が閉じる'}{' '}
-                  <Answer show={reveal}>{k > 1 ? <Frac n={1} d={2 * k - 1} /> : '1'}</Answer>
+                  {k > 1 ? '輪が閉じる' : '必ず輪が閉じる'}
+                  <Answer show={reveal} ask={k > 1 ? '確率は？' : '（確率は？）'}>
+                    {k > 1 ? <Frac n={1} d={2 * k - 1} /> : '1'}
+                  </Answer>
                 </span>
                 {taken?.closed && <span className="tree-pick">{i + 1}回目 {pairText(taken)}</span>}
               </div>

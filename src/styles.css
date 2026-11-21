@@ -667,18 +667,15 @@ mark {
   font-weight: 700;
 }
 
-.blank {
-  display: inline-block;
-  vertical-align: middle;
-  width: 2.2em;
-  height: 1.4em;
-  border: 1.5px solid var(--grid-strong);
-  border-radius: 4px;
-  background: #fff;
+.ask {
+  color: var(--ink-2);
+  font-weight: 500;
 }
 
-.blank-wide {
-  width: 6.5em;
+.ask-line {
+  margin: -0.2rem 0 0;
+  font-size: 0.85rem;
+  color: var(--ink-2);
 }
 
 .num {
@@ -1066,8 +1063,11 @@ mark {
 .tree-label {
   display: inline-flex;
   align-items: center;
-  gap: 0.3rem;
   white-space: nowrap;
+}
+
+.tree-label .answer {
+  margin-left: 0.3rem;
 }
 
 .tree-pick {
@@ -1151,6 +1151,10 @@ mark {
 
 .patterns .num {
   text-align: center;
+}
+
+.patterns td .ask {
+  color: var(--muted);
 }
 
 .patterns tr.is-possible th {
