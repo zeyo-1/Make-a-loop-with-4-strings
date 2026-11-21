@@ -672,11 +672,7 @@ mark {
   font-weight: 500;
 }
 
-.ask-line {
-  margin: -0.2rem 0 0;
-  font-size: 0.85rem;
-  color: var(--ink-2);
-}
+
 
 .num {
   font-variant-numeric: tabular-nums;
@@ -1009,15 +1005,40 @@ mark {
 .tree-box {
   display: flex;
   align-items: center;
-  justify-content: space-between;
-  gap: 0.5rem;
   border: 1.5px solid var(--ink-2);
   border-radius: 10px;
-  padding: 0.25rem 0.5rem 0.25rem 0.8rem;
+  padding: 0.25rem 0.8rem;
   background: #fff;
+  color: var(--ink);
   font-size: 0.9rem;
   white-space: nowrap;
   min-height: 2.4rem;
+  transition: color 0.2s, border-color 0.2s, background-color 0.2s;
+}
+
+/* まだ結んでいないところはグレー */
+.tree-box.is-future {
+  border-color: var(--rule);
+  background: transparent;
+  color: #a3afb8;
+}
+
+.tree-edge {
+  display: grid;
+  grid-template-columns: 1fr 2.2rem 1fr;
+  align-items: center;
+  min-height: 2.6rem;
+}
+
+.tree-step {
+  justify-self: end;
+  font-size: 0.85rem;
+  font-weight: 700;
+  color: var(--ink);
+}
+
+.tree-result {
+  justify-self: start;
 }
 
 .tree-tag {
@@ -1038,23 +1059,32 @@ mark {
 }
 
 .tree-arrow {
-  align-self: center;
+  justify-self: center;
+  align-self: stretch;
   width: 3px;
-  height: 1.7rem;
-  margin-bottom: 7px;
-  background: var(--ink-2);
+  margin: 0 0 8px;
+  background: var(--rule);
   position: relative;
+  transition: background-color 0.2s;
 }
 
 .tree-arrow::after {
   content: '';
   position: absolute;
-  bottom: -7px;
+  bottom: -8px;
   left: 50%;
   transform: translateX(-50%);
   border: 6px solid transparent;
-  border-top: 8px solid var(--ink-2);
+  border-top: 8px solid var(--rule);
   border-bottom: 0;
+}
+
+.tree-edge.is-done .tree-arrow {
+  background: var(--ink-2);
+}
+
+.tree-edge.is-done .tree-arrow::after {
+  border-top-color: var(--ink-2);
 }
 
 /* 問4の表 */
@@ -1087,6 +1117,16 @@ mark {
 
 .patterns td .ask {
   color: var(--muted);
+}
+
+.found-n {
+  font-family: var(--math);
+  font-weight: 600;
+  font-size: 1.05rem;
+}
+
+.patterns thead .num {
+  text-align: center;
 }
 
 .patterns tr.is-possible th {

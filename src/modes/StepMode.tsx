@@ -1,7 +1,8 @@
-import { Fragment, useMemo, useRef, useState } from 'react';
+import { Fragment, useEffect, useMemo, useRef, useState } from 'react';
 import { RopeCanvas, type RopeCanvasHandle } from '../components/RopeCanvas';
 import { Answer, V } from '../components/MathText';
 import { WorkCard } from '../components/WorkCard';
+import { usePersistentState } from '../storage';
 import { analyze, chainOtherEnd, freeEnds, LABELS, STRING_COLORS, tiesFromPairs } from '../logic/strings';
 
 interface Step {
@@ -12,15 +13,17 @@ interface Step {
 
 /** 問4の表：1〜3回目のどこで輪が閉じたか（4回目は必ず閉じる） */
 const PATTERNS = [
-  { name: 'なし', closes: [0, 0, 0], ways: '6 × 4 × 2', count: 48, n: 1 },
-  { name: '1回目だけ', closes: [1, 0, 0], ways: '1 × 4 × 2', count: 8, n: 2 },
-  { name: '2回目だけ', closes: [0, 1, 0], ways: '6 × 1 × 2', count: 12, n: 2 },
-  { name: '3回目だけ', closes: [0, 0, 1], ways: '6 × 4 × 1', count: 24, n: 2 },
-  { name: '1回目と2回目', closes: [1, 1, 0], ways: '1 × 1 × 2', count: 2, n: 3 },
-  { name: '1回目と3回目', closes: [1, 0, 1], ways: '1 × 4 × 1', count: 4, n: 3 },
-  { name: '2回目と3回目', closes: [0, 1, 1], ways: '6 × 1 × 1', count: 6, n: 3 },
-  { name: '3回とも', closes: [1, 1, 1], ways: '1 × 1 × 1', count: 1, n: 4 },
+  { name: 'なし', closes: [0, 0, 0], n: 1 },
+  { name: '1回目だけ', closes: [1, 0, 0], n: 2 },
+  { name: '2回目だけ', closes: [0, 1, 0], n: 2 },
+  { name: '3回目だけ', closes: [0, 0, 1], n: 2 },
+  { name: '1回目と2回目', closes: [1, 1, 0], n: 3 },
+  { name: '1回目と3回目', closes: [1, 0, 1], n: 3 },
+  { name: '2回目と3回目', closes: [0, 1, 1], n: 3 },
+  { name: '3回とも', closes: [1, 1, 1], n: 4 },
 ];
+
+const NONE_FOUND = PATTERNS.map(() => false);
 
 function EndBadge({ e, size = 'md' }: { e: number; size?: 'md' | 'lg' }) {
   return (
@@ -34,6 +37,13 @@ const pairText = (s: Step) => `${LABELS[s.a]}と${LABELS[s.b]}`;
 
 export function StepMode({ hidden, reveal }: { hidden: boolean; reveal: boolean }) {
   const [steps, setSteps] = useState<Step[]>([]);
+  const [found, setFound] = usePersistentState<boolean[]>('step.found', NONE_FOUND);
+  const [confirmClear, setConfirmClear] = useState(false);
+  useEffect(() => {
+    if (!confirmClear) return;
+    const id = window.setTimeout(() => setConfirmClear(false), 4000);
+    return () => clearTimeout(id);
+  }, [confirmClear]);
   const canvas = useRef<RopeCanvasHandle>(null);
   const ties = useMemo(() => tiesFromPairs(steps.map((s) => [s.a, s.b])), [steps]);
   const analysis = useMemo(() => analyze(ties), [ties]);
@@ -53,7 +63,12 @@ export function StepMode({ hidden, reveal }: { hidden: boolean; reveal: boolean 
 
   const choose = (b: number) => {
     if (done || !candidates.includes(b)) return;
-    apply([...steps, { a: source, b, closed: b === closing }]);
+    const next = [...steps, { a: source, b, closed: b === closing }];
+    apply(next);
+    if (next.length === 4) {
+      const idx = PATTERNS.findIndex((p) => p.closes.every((c, i) => c === (next[i].closed ? 1 : 0)));
+      if (idx >= 0) setFound((f) => f.map((v, i) => v || i === idx));
+    }
   };
 
   const closedAt = steps.map((s) => s.closed);
@@ -146,47 +161,49 @@ export function StepMode({ hidden, reveal }: { hidden: boolean; reveal: boolean 
 
         <section className="panel-sec">
           <h3 className="panel-h">1〜3回目で輪が閉じた回</h3>
-          {!reveal && <p className="ask-line">それぞれ何通りある？ そのときの輪の数 <V>N</V> は？</p>}
           <table className="patterns">
             <thead>
               <tr>
                 <th scope="col">閉じた回</th>
-                <th scope="col">通り数</th>
-                <th scope="col">
+                <th scope="col" className="num">
                   <V>N</V>
                 </th>
               </tr>
             </thead>
             <tbody>
-              {PATTERNS.map((p) => {
+              {PATTERNS.map((p, idx) => {
                 const possible = closedAt.slice(0, 3).every((c, i) => (c ? 1 : 0) === p.closes[i]);
                 const exact = possible && steps.length >= 3;
                 return (
                   <tr key={p.name} className={exact ? 'is-exact' : possible && steps.length > 0 ? 'is-possible' : ''}>
                     <th scope="row">{p.name}</th>
-                    <td>
-                      <Answer show={reveal}>
-                        {p.ways} = {p.count}
-                      </Answer>
-                    </td>
                     <td className="num">
-                      <Answer show={reveal}>{p.n}</Answer>
+                      {found[idx] ? (
+                        <span className="found-n">{p.n}</span>
+                      ) : (
+                        <Answer show={reveal}>{p.n}</Answer>
+                      )}
                     </td>
                   </tr>
                 );
               })}
             </tbody>
-            <tfoot>
-              <tr>
-                <th scope="row">合計</th>
-                <td>
-                  <Answer show={reveal}>105</Answer>
-                </td>
-                <td />
-              </tr>
-            </tfoot>
           </table>
-          <p className="note">黄色の行が、いま結んでいる道すじに当てはまる場合です。</p>
+          <p className="note">
+            黄色の行が、いま結んでいる道すじに当てはまる場合です。結び終わると、その行に <V>N</V> が書き込まれます。
+          </p>
+          <button
+            type="button"
+            className={`btn-text danger${confirmClear ? ' is-confirm' : ''}`}
+            disabled={!found.some(Boolean)}
+            onClick={() => {
+              if (!confirmClear) return setConfirmClear(true);
+              setFound(NONE_FOUND);
+              setConfirmClear(false);
+            }}
+          >
+            {confirmClear ? 'もう一度押すと表の N を消します' : '表の N を消す'}
+          </button>
         </section>
       </aside>
     </section>
@@ -194,24 +211,33 @@ export function StepMode({ hidden, reveal }: { hidden: boolean; reveal: boolean 
 }
 
 /**
- * 結ぶたびの記録。最初は「ひも4本」だけ。1回結ぶごとに矢印と次の箱が増え、
- * その手で輪が「閉じた」か「閉じてない」かを箱に書く。
+ * 結ぶたびの記録。箱と矢印は最初からうすく出しておき、結んだところから濃くする。
+ * 矢印の左に「n回目」、右にその手で輪が「閉じた」か「閉じてない」かを書く。
  */
 function Tree({ steps }: { steps: Step[] }) {
+  const levels = [4, 3, 2, 1, 0];
   return (
     <figure className="tree" aria-label="結ぶたびの記録">
-      <div className="tree-box">ひも4本（端8つ）</div>
-      {steps.map((s, i) => {
-        const k = 3 - i; // この手のあとに、まだ輪になっていないひもの本数
+      {levels.map((k, i) => {
+        const s = i > 0 ? steps[i - 1] : undefined; // この箱にたどりついた手
         return (
-          <Fragment key={i}>
-            <div className="tree-arrow" aria-hidden />
-            <div className="tree-box">
+          <Fragment key={k}>
+            {i > 0 && (
+              <div className={`tree-edge${s ? ' is-done' : ''}`}>
+                <span className="tree-step">{s ? `${i}回目` : ''}</span>
+                <span className="tree-arrow" aria-hidden />
+                <span className="tree-result">
+                  {s && (
+                    <span className={`tree-tag ${s.closed ? 'is-closed' : 'is-open'}`}>
+                      <span className="sr-only">{i}回目の結果：</span>
+                      {s.closed ? '閉じた' : '閉じてない'}
+                    </span>
+                  )}
+                </span>
+              </div>
+            )}
+            <div className={`tree-box${i <= steps.length ? '' : ' is-future'}`}>
               {k > 0 ? `ひも${k}本（端${2 * k}つ）` : '結び終わり'}
-              <span className={`tree-tag ${s.closed ? 'is-closed' : 'is-open'}`}>
-                <span className="sr-only">{i + 1}回目の結果：</span>
-                {s.closed ? '閉じた' : '閉じてない'}
-              </span>
             </div>
           </Fragment>
         );
