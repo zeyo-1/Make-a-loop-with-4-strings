@@ -998,7 +998,7 @@ mark {
   margin-top: 0.15rem;
 }
 
-/* 樹形図（ワークシート3ページ目） */
+/* 結ぶたびの記録（ワークシート3ページ目の図をもとに） */
 .tree {
   margin: 0;
   display: flex;
@@ -1007,122 +1007,54 @@ mark {
 }
 
 .tree-box {
-  align-self: stretch;
   display: flex;
   align-items: center;
   justify-content: space-between;
+  gap: 0.5rem;
   border: 1.5px solid var(--ink-2);
   border-radius: 10px;
-  padding: 0.2rem 0.8rem;
+  padding: 0.25rem 0.5rem 0.25rem 0.8rem;
   background: #fff;
   font-size: 0.9rem;
   white-space: nowrap;
+  min-height: 2.4rem;
 }
 
-.tree-box.is-current {
-  border: 2.5px solid var(--ink);
+.tree-tag {
+  font-size: 0.8rem;
   font-weight: 700;
-  box-shadow: 0 0 0 4px rgb(255 216 74 / 0.6);
-}
-
-.tree-box.is-future {
-  opacity: 0.5;
-  background: transparent;
-}
-
-.tree-here {
-  font-size: 0.72rem;
-  font-weight: 700;
-  color: #fff;
-  background: var(--ink);
   border-radius: 999px;
-  padding: 0 0.5rem;
+  padding: 0.05rem 0.65rem;
 }
 
-.tree-edge {
-  display: grid;
-  grid-template-columns: 1fr 2rem 1fr;
-  align-items: center;
-  min-height: 3rem;
-}
-
-.tree-side {
-  display: flex;
-  flex-direction: column;
-  gap: 0.05rem;
-  padding: 0.15rem 0.4rem;
-  border-radius: 6px;
-  font-size: 0.85rem;
-}
-
-.tree-left {
-  align-items: flex-end;
-  text-align: right;
-}
-
-.tree-label {
-  display: inline-flex;
-  align-items: center;
-  white-space: nowrap;
-}
-
-.tree-label .answer {
-  margin-left: 0.3rem;
-}
-
-.tree-pick {
-  font-size: 0.75rem;
-  font-weight: 700;
-}
-
-.tree-side.is-taken {
-  font-weight: 700;
-}
-
-.tree-left.is-taken {
-  background: var(--connect-soft);
-}
-
-.tree-right.is-taken {
+.tree-tag.is-closed {
   background: var(--marker);
+  color: var(--ink);
+}
+
+.tree-tag.is-open {
+  background: var(--connect-soft);
+  color: var(--ink-2);
 }
 
 .tree-arrow {
-  justify-self: center;
+  align-self: center;
   width: 3px;
-  height: 100%;
-  min-height: 2.6rem;
-  background: var(--rule);
+  height: 1.7rem;
+  margin-bottom: 7px;
+  background: var(--ink-2);
   position: relative;
 }
 
 .tree-arrow::after {
   content: '';
   position: absolute;
-  bottom: -2px;
+  bottom: -7px;
   left: 50%;
   transform: translateX(-50%);
   border: 6px solid transparent;
-  border-top: 8px solid var(--rule);
+  border-top: 8px solid var(--ink-2);
   border-bottom: 0;
-}
-
-.tree-arrow.is-connect {
-  background: var(--connect);
-  width: 5px;
-}
-
-.tree-arrow.is-connect::after {
-  border-top-color: var(--connect);
-}
-
-.tree-arrow.is-close {
-  background: #d9a900;
-  width: 5px;
-}
-
-.tree-arrow.is-close::after {
-  border-top-color: #d9a900;
 }
 
 /* 問4の表 */

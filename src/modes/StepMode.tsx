@@ -1,6 +1,6 @@
-import { useMemo, useRef, useState } from 'react';
+import { Fragment, useMemo, useRef, useState } from 'react';
 import { RopeCanvas, type RopeCanvasHandle } from '../components/RopeCanvas';
-import { Answer, Frac, V } from '../components/MathText';
+import { Answer, V } from '../components/MathText';
 import { WorkCard } from '../components/WorkCard';
 import { analyze, chainOtherEnd, freeEnds, LABELS, STRING_COLORS, tiesFromPairs } from '../logic/strings';
 
@@ -134,7 +134,6 @@ export function StepMode({ hidden, reveal }: { hidden: boolean; reveal: boolean 
           label={`1手ずつ結ぶ。${steps.length}回結んだところ。輪は${analysis.n}個`}
           source={source}
           candidates={candidates}
-          closingEnd={closing}
           canTie={(a, b) => (a === source && candidates.includes(b)) || (b === source && candidates.includes(a))}
           onTie={(a, b) => choose(a === source ? b : a)}
         />
@@ -142,12 +141,11 @@ export function StepMode({ hidden, reveal }: { hidden: boolean; reveal: boolean 
 
       <aside className="panel" aria-label="記録">
         <section className="panel-sec">
-          <h3 className="panel-h">1回結ぶたびに、ひもは必ず1本減る</h3>
-          <Tree steps={steps} reveal={reveal} />
+          <Tree steps={steps} />
         </section>
 
         <section className="panel-sec">
-          <h3 className="panel-h">1〜3回目で輪が閉じた回（問4）</h3>
+          <h3 className="panel-h">1〜3回目で輪が閉じた回</h3>
           {!reveal && <p className="ask-line">それぞれ何通りある？ そのときの輪の数 <V>N</V> は？</p>}
           <table className="patterns">
             <thead>
@@ -195,50 +193,29 @@ export function StepMode({ hidden, reveal }: { hidden: boolean; reveal: boolean 
   );
 }
 
-/** 3ページ目の図。実際に結んだ手（何回目に何と何を結んだか）も書き込む */
-function Tree({ steps, reveal }: { steps: Step[]; reveal: boolean }) {
-  const levels = [4, 3, 2, 1];
+/**
+ * 結ぶたびの記録。最初は「ひも4本」だけ。1回結ぶごとに矢印と次の箱が増え、
+ * その手で輪が「閉じた」か「閉じてない」かを箱に書く。
+ */
+function Tree({ steps }: { steps: Step[] }) {
   return (
-    <figure className="tree">
-      {levels.map((k, i) => {
-        const taken = steps[i];
-        const isCurrent = steps.length === i;
-        const reached = steps.length >= i;
+    <figure className="tree" aria-label="結ぶたびの記録">
+      <div className="tree-box">ひも4本（端8つ）</div>
+      {steps.map((s, i) => {
+        const k = 3 - i; // この手のあとに、まだ輪になっていないひもの本数
         return (
-          <div key={k} className="tree-block">
-            <div className={`tree-box${isCurrent ? ' is-current' : ''}${reached ? '' : ' is-future'}`}>
-              ひも{k}本（端{2 * k}つ）
-              {isCurrent && <span className="tree-here">いまここ</span>}
+          <Fragment key={i}>
+            <div className="tree-arrow" aria-hidden />
+            <div className="tree-box">
+              {k > 0 ? `ひも${k}本（端${2 * k}つ）` : '結び終わり'}
+              <span className={`tree-tag ${s.closed ? 'is-closed' : 'is-open'}`}>
+                <span className="sr-only">{i + 1}回目の結果：</span>
+                {s.closed ? '閉じた' : '閉じてない'}
+              </span>
             </div>
-            <div className="tree-edge">
-              <div className={`tree-side tree-left${taken && !taken.closed ? ' is-taken' : ''}`}>
-                {k > 1 && (
-                  <>
-                    <span className="tree-label">
-                      つながる
-                      <Answer show={reveal} ask="確率は？">
-                        <Frac n={2 * k - 2} d={2 * k - 1} />
-                      </Answer>
-                    </span>
-                    {taken && !taken.closed && <span className="tree-pick">{i + 1}回目 {pairText(taken)}</span>}
-                  </>
-                )}
-              </div>
-              <div className={`tree-arrow${taken ? (taken.closed ? ' is-close' : ' is-connect') : ''}`} aria-hidden />
-              <div className={`tree-side tree-right${taken?.closed ? ' is-taken' : ''}`}>
-                <span className="tree-label">
-                  {k > 1 ? '輪が閉じる' : '必ず輪が閉じる'}
-                  <Answer show={reveal} ask={k > 1 ? '確率は？' : '（確率は？）'}>
-                    {k > 1 ? <Frac n={1} d={2 * k - 1} /> : '1'}
-                  </Answer>
-                </span>
-                {taken?.closed && <span className="tree-pick">{i + 1}回目 {pairText(taken)}</span>}
-              </div>
-            </div>
-          </div>
+          </Fragment>
         );
       })}
-      <div className={`tree-box${steps.length === 4 ? ' is-current' : ' is-future'}`}>結び終わり</div>
     </figure>
   );
 }
