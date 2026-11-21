@@ -2,7 +2,6 @@ import { useEffect, useLayoutEffect, useRef, useState } from 'react';
 import { FreeMode } from './modes/FreeMode';
 import { RandomMode } from './modes/RandomMode';
 import { StepMode } from './modes/StepMode';
-import { load, save } from './storage';
 
 const TABS = [
   { id: 'free', label: '自由に結ぶ' },
@@ -16,17 +15,8 @@ const tabFromHash = (): TabId => {
   return (TABS.find((t) => t.id === h)?.id ?? 'free') as TabId;
 };
 
-function initialTeacher() {
-  const q = new URLSearchParams(location.search).get('teacher');
-  if (q === '1' || q === 'true') return true;
-  if (q === '0' || q === 'false') return false;
-  return load('teacher', false);
-}
-
 export default function App() {
   const [tab, setTab] = useState<TabId>(tabFromHash);
-  const [teacher, setTeacher] = useState(initialTeacher);
-  const [reveal, setReveal] = useState(false);
 
   useEffect(() => {
     const onHash = () => setTab(tabFromHash());
@@ -34,18 +24,10 @@ export default function App() {
     return () => window.removeEventListener('hashchange', onHash);
   }, []);
 
-  useEffect(() => {
-    save('teacher', teacher);
-    document.documentElement.classList.toggle('teacher', teacher);
-    if (!teacher) setReveal(false);
-  }, [teacher]);
-
   const go = (id: TabId) => {
     setTab(id);
     history.replaceState(null, '', `${location.pathname}${location.search}#${id}`);
   };
-
-  const showAnswers = teacher && reveal;
 
   // ヘッダーの高さを測って、横長の画面ではひもの台を画面いっぱいにする
   const headerRef = useRef<HTMLElement>(null);
@@ -83,29 +65,12 @@ export default function App() {
             </button>
           ))}
         </nav>
-        <div className="tools">
-          {teacher && (
-            <button
-              type="button"
-              className={`reveal${reveal ? ' is-on' : ''}`}
-              aria-pressed={reveal}
-              onClick={() => setReveal((r) => !r)}
-            >
-              {reveal ? '答えをかくす' : '答えを表示'}
-            </button>
-          )}
-          <label className="switch">
-            <input type="checkbox" checked={teacher} onChange={(e) => setTeacher(e.target.checked)} />
-            <span className="switch-track" aria-hidden />
-            先生用
-          </label>
-        </div>
       </header>
 
       <main>
         <FreeMode hidden={tab !== 'free'} />
-        <RandomMode hidden={tab !== 'random'} teacher={teacher} reveal={showAnswers} />
-        <StepMode hidden={tab !== 'step'} reveal={showAnswers} />
+        <RandomMode hidden={tab !== 'random'} />
+        <StepMode hidden={tab !== 'step'} />
       </main>
     </div>
   );

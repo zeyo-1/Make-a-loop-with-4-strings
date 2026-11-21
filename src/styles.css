@@ -35,13 +35,6 @@
   -webkit-tap-highlight-color: transparent;
 }
 
-/* 先生用：プロジェクターで後ろの席から読める大きさに（大きい画面のときだけ） */
-@media (min-width: 900px) {
-  :root.teacher {
-    font-size: 19px;
-  }
-}
-
 * {
   box-sizing: border-box;
 }
@@ -90,10 +83,10 @@ button {
 /* ---------- ヘッダー ---------- */
 .top {
   display: grid;
-  grid-template-columns: minmax(0, 1fr) auto;
+  grid-template-columns: minmax(0, 1fr);
   grid-template-areas:
-    'brand tools'
-    'tabs tabs';
+    'brand'
+    'tabs';
   align-items: center;
   gap: 0.5rem 1rem;
   padding: 0.6rem 0.8rem 0.6rem;
@@ -161,82 +154,6 @@ button {
 .tabs button.is-on {
   background: var(--ink);
   color: #fff;
-}
-
-.tools {
-  grid-area: tools;
-  display: flex;
-  align-items: center;
-  gap: 0.6rem;
-  justify-self: end;
-}
-
-.reveal {
-  border: 2px solid var(--shu);
-  color: var(--shu);
-  background: #fff;
-  border-radius: 999px;
-  padding: 0.2rem 0.8rem;
-  font-weight: 700;
-  font-size: 0.85rem;
-  white-space: nowrap;
-}
-
-.reveal.is-on {
-  background: var(--shu);
-  color: #fff;
-}
-
-.switch {
-  display: inline-flex;
-  align-items: center;
-  gap: 0.4rem;
-  font-size: 0.82rem;
-  color: var(--ink-2);
-  cursor: pointer;
-  user-select: none;
-  white-space: nowrap;
-}
-
-.switch input {
-  position: absolute;
-  opacity: 0;
-  width: 1px;
-  height: 1px;
-}
-
-.switch-track {
-  width: 2.2rem;
-  height: 1.3rem;
-  border-radius: 999px;
-  background: #b9c7cc;
-  position: relative;
-  transition: background 0.15s;
-}
-
-.switch-track::after {
-  content: '';
-  position: absolute;
-  top: 0.15rem;
-  left: 0.15rem;
-  width: 1rem;
-  height: 1rem;
-  border-radius: 50%;
-  background: #fff;
-  transition: transform 0.15s;
-}
-
-.switch input:checked + .switch-track {
-  background: var(--ink);
-}
-
-.switch input:checked + .switch-track::after {
-  transform: translateX(0.9rem);
-}
-
-.switch input:focus-visible + .switch-track {
-  outline: 3px solid var(--connect);
-  outline-offset: 2px;
 }
 
 /* ---------- 画面の組み立て ---------- */
@@ -502,6 +419,26 @@ mark {
   gap: 0.45rem;
 }
 
+.panel-head {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 0.6rem;
+}
+
+.btn-toggle {
+  min-height: 2.2rem;
+  padding: 0.15rem 0.75rem;
+  font-size: 0.8rem;
+  border-color: var(--shu);
+  color: var(--shu);
+}
+
+.btn-toggle[aria-pressed='true'] {
+  background: var(--shu);
+  color: #fff;
+}
+
 .panel-h {
   margin: 0;
   font-size: 0.88rem;
@@ -526,13 +463,9 @@ mark {
 /* 横長の画面（iPad 横・プロジェクター）：作業カード｜記録パネル */
 @media (min-width: 900px) and (orientation: landscape) {
   .top {
-    grid-template-columns: auto 1fr auto;
-    grid-template-areas: 'brand tabs tools';
+    grid-template-columns: 1fr minmax(0, 34rem) 1fr;
+    grid-template-areas: 'brand tabs .';
     padding: 0.7rem 1.1rem;
-  }
-  .tabs {
-    justify-self: center;
-    width: min(100%, 34rem);
   }
   .brand-text {
     flex-direction: column;
@@ -954,10 +887,21 @@ mark {
 .class-input {
   border: 1.5px dashed var(--rule);
   border-radius: 12px;
-  padding: 0.7rem;
+  padding: 0.5rem 0.7rem;
+}
+
+.class-input summary {
+  cursor: pointer;
+  font-size: 0.88rem;
+  font-weight: 700;
+  color: var(--ink-2);
+}
+
+.class-form {
   display: flex;
   flex-direction: column;
   gap: 0.5rem;
+  margin-top: 0.5rem;
 }
 
 .class-grid {
@@ -1154,10 +1098,6 @@ mark {
   }
   .brand h1 {
     font-size: 1.3rem;
-  }
-  .reveal {
-    padding: 0.15rem 0.6rem;
-    font-size: 0.8rem;
   }
   .mode {
     padding-inline: 0.45rem;

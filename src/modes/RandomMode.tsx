@@ -20,17 +20,16 @@ const ZERO: Counts = [0, 0, 0, 0];
 
 interface Props {
   hidden: boolean;
-  teacher: boolean;
-  reveal: boolean;
 }
 
-export function RandomMode({ hidden, teacher, reveal }: Props) {
+export function RandomMode({ hidden }: Props) {
   const [ties, setTies] = useState<Ties>(emptyTies);
   const [counts, setCounts] = usePersistentState<Counts>('random.counts', ZERO);
   const [recent, setRecent] = usePersistentState<number[]>('random.recent', []);
   const [prediction, setPrediction] = usePersistentState<number | null>('random.prediction', null);
   const [lastPairs, setLastPairs] = useState<[number, number][] | null>(null);
   const [confirmClear, setConfirmClear] = useState(false);
+  const [reveal, setReveal] = useState(false);
   const canvas = useRef<RopeCanvasHandle>(null);
   useEffect(() => {
     if (!confirmClear) return;
@@ -140,7 +139,12 @@ export function RandomMode({ hidden, teacher, reveal }: Props) {
 
       <aside className="panel" aria-label="記録">
         <section className="panel-sec">
-          <h3 className="panel-h">実演の結果（{total}回）</h3>
+          <div className="panel-head">
+            <h3 className="panel-h">実演の結果（{total}回）</h3>
+            <button type="button" className="btn btn-toggle" aria-pressed={reveal} onClick={() => setReveal((v) => !v)}>
+              {reveal ? '確率を隠す' : '確率を表示'}
+            </button>
+          </div>
           <ResultTable counts={counts} prediction={prediction} reveal={reveal} />
           <p className="mean">
             <span>
@@ -167,7 +171,7 @@ export function RandomMode({ hidden, teacher, reveal }: Props) {
           </section>
         )}
 
-        {teacher && <ClassInput onAdd={(add) => setCounts((c) => c.map((v, i) => v + add[i]) as Counts)} />}
+        <ClassInput onAdd={(add) => setCounts((c) => c.map((v, i) => v + add[i]) as Counts)} />
 
         <button
           type="button"
@@ -244,8 +248,10 @@ function ClassInput({ onAdd }: { onAdd: (add: number[]) => void }) {
   const nums = vals.map((v) => Math.max(0, Math.floor(Number(v) || 0)));
   const sum = nums.reduce((a, b) => a + b, 0);
   return (
+    <details className="class-input">
+      <summary>クラスの結果を足す</summary>
     <form
-      className="class-input"
+      className="class-form"
       onSubmit={(e) => {
         e.preventDefault();
         if (sum === 0) return;
@@ -253,7 +259,6 @@ function ClassInput({ onAdd }: { onAdd: (add: number[]) => void }) {
         setVals(['', '', '', '']);
       }}
     >
-      <h3 className="panel-h">クラスの結果を足す</h3>
       <div className="class-grid">
         {vals.map((v, i) => (
           <label key={i}>
@@ -274,5 +279,6 @@ function ClassInput({ onAdd }: { onAdd: (add: number[]) => void }) {
         {sum > 0 ? `${sum}回分を足す` : '回数を入れて足す'}
       </button>
     </form>
+    </details>
   );
 }

@@ -35,10 +35,11 @@ function EndBadge({ e, size = 'md' }: { e: number; size?: 'md' | 'lg' }) {
 
 const pairText = (s: Step) => `${LABELS[s.a]}と${LABELS[s.b]}`;
 
-export function StepMode({ hidden, reveal }: { hidden: boolean; reveal: boolean }) {
+export function StepMode({ hidden }: { hidden: boolean }) {
   const [steps, setSteps] = useState<Step[]>([]);
   const [found, setFound] = usePersistentState<boolean[]>('step.found', NONE_FOUND);
   const [confirmClear, setConfirmClear] = useState(false);
+  const [showAllN, setShowAllN] = useState(false);
   useEffect(() => {
     if (!confirmClear) return;
     const id = window.setTimeout(() => setConfirmClear(false), 4000);
@@ -160,7 +161,12 @@ export function StepMode({ hidden, reveal }: { hidden: boolean; reveal: boolean 
         </section>
 
         <section className="panel-sec">
-          <h3 className="panel-h">1〜3回目で輪が閉じた回</h3>
+          <div className="panel-head">
+            <h3 className="panel-h">1〜3回目で輪が閉じた回</h3>
+            <button type="button" className="btn btn-toggle" aria-pressed={showAllN} onClick={() => setShowAllN((v) => !v)}>
+              {showAllN ? 'Nの値を隠す' : 'Nの値を表示'}
+            </button>
+          </div>
           <table className="patterns">
             <thead>
               <tr>
@@ -181,7 +187,7 @@ export function StepMode({ hidden, reveal }: { hidden: boolean; reveal: boolean 
                       {found[idx] ? (
                         <span className="found-n">{p.n}</span>
                       ) : (
-                        <Answer show={reveal}>{p.n}</Answer>
+                        <Answer show={showAllN}>{p.n}</Answer>
                       )}
                     </td>
                   </tr>
