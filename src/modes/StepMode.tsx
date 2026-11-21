@@ -163,8 +163,8 @@ export function StepMode({ hidden }: { hidden: boolean }) {
         <section className="panel-sec">
           <div className="panel-head">
             <h3 className="panel-h">1〜3回目で輪が閉じた回</h3>
-            <button type="button" className="btn btn-toggle" aria-pressed={showAllN} onClick={() => setShowAllN((v) => !v)}>
-              {showAllN ? 'Nの値を隠す' : 'Nの値を表示'}
+            <button type="button" className="btn-toggle" aria-pressed={showAllN} onClick={() => setShowAllN((v) => !v)}>
+              {showAllN ? 'Nの値を非表示' : 'Nの値を表示'}
             </button>
           </div>
           <table className="patterns">

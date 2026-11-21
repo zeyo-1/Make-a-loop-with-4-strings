@@ -1,15 +1,12 @@
 import { useEffect, useMemo, useRef, useState } from 'react';
 import { RopeCanvas, type RopeCanvasHandle } from '../components/RopeCanvas';
-import { Answer, Frac, V } from '../components/MathText';
+import { V } from '../components/MathText';
 import { WorkCard } from '../components/WorkCard';
 import {
   analyze,
   emptyTies,
-  EXPECTED_N,
   LABELS,
   randomPairs,
-  THEORY_FRACTIONS,
-  THEORY_OUT_OF_105,
   tiesFromPairs,
   type Ties,
 } from '../logic/strings';
@@ -29,7 +26,6 @@ export function RandomMode({ hidden }: Props) {
   const [prediction, setPrediction] = usePersistentState<number | null>('random.prediction', null);
   const [lastPairs, setLastPairs] = useState<[number, number][] | null>(null);
   const [confirmClear, setConfirmClear] = useState(false);
-  const [reveal, setReveal] = useState(false);
   const canvas = useRef<RopeCanvasHandle>(null);
   useEffect(() => {
     if (!confirmClear) return;
@@ -139,22 +135,12 @@ export function RandomMode({ hidden }: Props) {
 
       <aside className="panel" aria-label="記録">
         <section className="panel-sec">
-          <div className="panel-head">
-            <h3 className="panel-h">実演の結果（{total}回）</h3>
-            <button type="button" className="btn btn-toggle" aria-pressed={reveal} onClick={() => setReveal((v) => !v)}>
-              {reveal ? '確率を隠す' : '確率を表示'}
-            </button>
-          </div>
-          <ResultTable counts={counts} prediction={prediction} reveal={reveal} />
+          <h3 className="panel-h">実演の結果（{total}回）</h3>
+          <ResultTable counts={counts} prediction={prediction} />
           <p className="mean">
             <span>
               平均 <V>N</V> = {mean == null ? '—' : mean.toFixed(3)}
             </span>
-            {reveal && (
-              <span className="answer">
-                期待値 <Frac n={EXPECTED_N[0]} d={EXPECTED_N[1]} /> ≈ {(EXPECTED_N[0] / EXPECTED_N[1]).toFixed(3)}
-              </span>
-            )}
           </p>
         </section>
 
@@ -170,8 +156,6 @@ export function RandomMode({ hidden }: Props) {
             </p>
           </section>
         )}
-
-        <ClassInput onAdd={(add) => setCounts((c) => c.map((v, i) => v + add[i]) as Counts)} />
 
         <button
           type="button"
@@ -191,7 +175,7 @@ export function RandomMode({ hidden }: Props) {
   );
 }
 
-function ResultTable({ counts, prediction, reveal }: { counts: Counts; prediction: number | null; reveal: boolean }) {
+function ResultTable({ counts, prediction }: { counts: Counts; prediction: number | null }) {
   const total = counts.reduce((a, b) => a + b, 0);
   const maxRel = Math.max(0.5, ...counts.map((c) => (total ? c / total : 0)));
   return (
@@ -206,14 +190,11 @@ function ResultTable({ counts, prediction, reveal }: { counts: Counts; predictio
           </th>
           <th scope="col">回数</th>
           <th scope="col">相対度数</th>
-          {reveal && <th scope="col">確率</th>}
         </tr>
       </thead>
       <tbody>
         {counts.map((c, i) => {
           const rel = total ? c / total : 0;
-          const [tn, td] = THEORY_FRACTIONS[i];
-          const p = THEORY_OUT_OF_105[i] / 105;
           return (
             <tr key={i} className={prediction === i + 1 ? 'is-predicted' : ''}>
               <th scope="row">
@@ -223,62 +204,14 @@ function ResultTable({ counts, prediction, reveal }: { counts: Counts; predictio
               <td className="col-bar">
                 <div className="bar-track">
                   <div className="bar" style={{ width: `${(rel / maxRel) * 100}%` }} />
-                  {reveal && <div className="bar-theory" style={{ left: `${(p / maxRel) * 100}%` }} />}
                 </div>
               </td>
               <td className="num">{c}</td>
               <td className="num">{total ? rel.toFixed(3) : '—'}</td>
-              {reveal && (
-                <td className="num">
-                  <Answer show>
-                    <Frac n={tn} d={td} />
-                  </Answer>
-                </td>
-              )}
             </tr>
           );
         })}
       </tbody>
     </table>
-  );
-}
-
-function ClassInput({ onAdd }: { onAdd: (add: number[]) => void }) {
-  const [vals, setVals] = useState(['', '', '', '']);
-  const nums = vals.map((v) => Math.max(0, Math.floor(Number(v) || 0)));
-  const sum = nums.reduce((a, b) => a + b, 0);
-  return (
-    <details className="class-input">
-      <summary>クラスの結果を足す</summary>
-    <form
-      className="class-form"
-      onSubmit={(e) => {
-        e.preventDefault();
-        if (sum === 0) return;
-        onAdd(nums);
-        setVals(['', '', '', '']);
-      }}
-    >
-      <div className="class-grid">
-        {vals.map((v, i) => (
-          <label key={i}>
-            <span>
-              <V>N</V>={i + 1}
-            </span>
-            <input
-              inputMode="numeric"
-              pattern="[0-9]*"
-              value={v}
-              onChange={(e) => setVals((old) => old.map((o, j) => (j === i ? e.target.value.replace(/[^0-9]/g, '') : o)))}
-              aria-label={`N=${i + 1} の回数`}
-            />
-          </label>
-        ))}
-      </div>
-      <button type="submit" className="btn" disabled={sum === 0}>
-        {sum > 0 ? `${sum}回分を足す` : '回数を入れて足す'}
-      </button>
-    </form>
-    </details>
   );
 }

@@ -427,16 +427,21 @@ mark {
 }
 
 .btn-toggle {
-  min-height: 2.2rem;
-  padding: 0.15rem 0.75rem;
-  font-size: 0.8rem;
-  border-color: var(--shu);
-  color: var(--shu);
+  border: 1px solid var(--rule);
+  border-radius: 6px;
+  background: transparent;
+  padding: 0.15rem 0.55rem;
+  min-height: 1.9rem;
+  font-size: 0.78rem;
+  font-weight: 500;
+  color: var(--ink-2);
+  white-space: nowrap;
 }
 
-.btn-toggle[aria-pressed='true'] {
-  background: var(--shu);
-  color: #fff;
+@media (hover: hover) {
+  .btn-toggle:hover {
+    border-color: var(--ink-2);
+  }
 }
 
 .panel-h {
@@ -831,14 +836,6 @@ mark {
   transition: width 0.3s ease;
 }
 
-.bar-theory {
-  position: absolute;
-  top: -0.25rem;
-  bottom: -0.25rem;
-  width: 0;
-  border-left: 2.5px solid var(--shu);
-}
-
 .result tr.is-predicted th {
   background: linear-gradient(transparent 20%, var(--marker) 20%, var(--marker) 80%, transparent 80%);
 }
@@ -882,50 +879,6 @@ mark {
   background: #fff;
   font-family: var(--math);
   font-size: 1rem;
-}
-
-.class-input {
-  border: 1.5px dashed var(--rule);
-  border-radius: 12px;
-  padding: 0.5rem 0.7rem;
-}
-
-.class-input summary {
-  cursor: pointer;
-  font-size: 0.88rem;
-  font-weight: 700;
-  color: var(--ink-2);
-}
-
-.class-form {
-  display: flex;
-  flex-direction: column;
-  gap: 0.5rem;
-  margin-top: 0.5rem;
-}
-
-.class-grid {
-  display: grid;
-  grid-template-columns: repeat(4, 1fr);
-  gap: 0.4rem;
-}
-
-.class-grid label {
-  display: flex;
-  flex-direction: column;
-  gap: 0.15rem;
-  font-size: 0.85rem;
-}
-
-.class-grid input {
-  width: 100%;
-  min-height: 2.4rem;
-  border: 1.5px solid var(--rule);
-  border-radius: 8px;
-  padding: 0 0.4rem;
-  font-size: 1.05rem;
-  text-align: right;
-  background: #fff;
 }
 
 /* ---------- 1手ずつ結ぶ ---------- */
